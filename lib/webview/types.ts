@@ -20,10 +20,9 @@ export const DEFAULT_ROUTE_INFO: RouteInfo = {
 // WebView Bridge Messages
 // ============================================================================
 
-export type WebToAppMessage = {
-  type: 'ROUTE_INFO';
-  payload: RouteInfo;
-};
+export type WebToAppMessage =
+  | { type: 'ROUTE_INFO'; payload: RouteInfo }
+  | { type: 'LOGOUT' };
 
 export type AppToWebMessage =
   | { type: 'NAVIGATE_TO'; path: string }

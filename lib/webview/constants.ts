@@ -18,6 +18,11 @@ export const getInitialUrl = (): string => {
   return IS_DEV_ANDROID ? url.replace('localhost', '10.0.2.2') : url;
 };
 
+export const getLoginUrl = (): string => {
+  const baseUrl = getInitialUrl();
+  return `${baseUrl}/login`;
+};
+
 // ============================================================================
 // Navigation
 // ============================================================================

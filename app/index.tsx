@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation, WebViewMessageEvent } from 'react-native-webview';
 import type { ShouldStartLoadRequest } from 'react-native-webview/lib/WebViewTypes';
+import CookieManager from '@react-native-cookies/cookies';
 
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { useSmartBackHandler } from '@/hooks/use-smart-back-handler';
@@ -12,6 +13,7 @@ import {
   FALLBACK_URL,
   DEFAULT_ROUTE_INFO,
   getInitialUrl,
+  getLoginUrl,
   isTabRoute,
   extractPath,
   toEmulatorUrl,
@@ -32,6 +34,23 @@ export default function WebViewScreen() {
   useSmartBackHandler({ webViewRef, routeInfo });
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Auth Handlers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const handleLogout = useCallback(async () => {
+    console.log('[WebView] Logout received, clearing cookies...');
+    
+    // 네이티브 쿠키 저장소 완전 클리어 (HTTP-only 쿠키 포함)
+    await CookieManager.clearAll();
+    
+    // 로그인 페이지로 이동
+    setUrl(getLoginUrl());
+    setRouteInfo({ ...DEFAULT_ROUTE_INFO, path: '/login', isHome: false });
+    
+    console.log('[WebView] Cookies cleared, redirecting to login...');
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Message Handlers
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -39,13 +58,18 @@ export default function WebViewScreen() {
     try {
       const message: WebToAppMessage = JSON.parse(event.nativeEvent.data);
 
-      if (message.type === 'ROUTE_INFO') {
-        setRouteInfo(message.payload);
+      switch (message.type) {
+        case 'ROUTE_INFO':
+          setRouteInfo(message.payload);
+          break;
+        case 'LOGOUT':
+          handleLogout();
+          break;
       }
     } catch {
       // Ignore parse errors
     }
-  }, []);
+  }, [handleLogout]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Navigation Handlers
