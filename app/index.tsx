@@ -38,16 +38,28 @@ export default function WebViewScreen() {
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleLogout = useCallback(async () => {
-    console.log('[WebView] Logout received, clearing cookies...');
+    console.log('[WebView] Logout received, clearing session cookies...');
     
-    // 네이티브 쿠키 저장소 완전 클리어 (HTTP-only 쿠키 포함)
-    await CookieManager.clearAll();
+    try {
+      // 웹앱 도메인의 쿠키만 삭제 (iOS만 지원)
+      // Android는 서버 세션이 무효화되므로 쿠키가 남아있어도 인증 실패함
+      const webUrl = getInitialUrl();
+      const cookies = await CookieManager.get(webUrl);
+      
+      for (const cookieName of Object.keys(cookies)) {
+        await CookieManager.clearByName(webUrl, cookieName);
+      }
+    } catch {
+      // Android: clearByName 미지원 - 쿠키 삭제 생략
+      // 서버에서 세션이 무효화되었으므로 쿠키가 있어도 인증 실패
+      console.log('[WebView] Cookie clear skipped (Android)');
+    }
     
     // 로그인 페이지로 이동
     setUrl(getLoginUrl());
     setRouteInfo({ ...DEFAULT_ROUTE_INFO, path: '/login', isHome: false });
     
-    console.log('[WebView] Cookies cleared, redirecting to login...');
+    console.log('[WebView] Redirecting to login...');
   }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
