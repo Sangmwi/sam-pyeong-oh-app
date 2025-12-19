@@ -6,6 +6,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_WEBVIEW_URL": "http://localhost:3000"
+      },
       "android": {
         "gradleCommand": ":app:assembleDebug"
       },
@@ -15,11 +18,17 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://staging.example.com"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://app.example.com"
+      },
       "android": {
         "buildType": "apk"
       }
