@@ -132,6 +132,7 @@ export default function WebViewScreen() {
     Alert.alert('연결 실패', '서버에 연결할 수 없습니다.', [
       { text: '홈으로', onPress: () => setUrl(FALLBACK_URL) },
       { text: '재시도', onPress: () => webViewRef.current?.reload(), style: 'cancel' },
+      { text: '뒤로가기', onPress: () => webViewRef.current?.goBack() },
     ]);
   }, []);
 
