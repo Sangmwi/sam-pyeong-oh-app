@@ -19,7 +19,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_WEBVIEW_URL": "https://staging.example.com"
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app/"
       },
       "android": {
         "buildType": "apk"
@@ -27,7 +27,7 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_WEBVIEW_URL": "https://app.example.com"
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app"
       },
       "android": {
         "buildType": "apk"

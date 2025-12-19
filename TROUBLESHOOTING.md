@@ -84,3 +84,4 @@ npx expo start --clear
 npm start -- --reset-cache
 ```
 
+

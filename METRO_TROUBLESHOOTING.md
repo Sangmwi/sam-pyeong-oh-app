@@ -124,3 +124,4 @@ npx expo run:android
 - Android 에뮬레이터는 `localhost`를 `10.0.2.2`로 자동 변환합니다
 - 실제 기기 사용 시에는 Wi-Fi 연결이 필요합니다
 
+
