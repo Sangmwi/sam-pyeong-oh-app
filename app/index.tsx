@@ -157,6 +157,8 @@ export default function WebViewScreen() {
         source={{ uri: url }}
         style={styles.webview}
         userAgent={CHROME_USER_AGENT}
+        // Debug
+        webviewDebuggingEnabled={__DEV__}
         // Scroll behavior
         bounces={false}
         overScrollMode="never"
