@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "sam-pyeong-oh-app",
-    "slug": "sam-pyeong-oh-app",
+    "name": "루티너스",
+    "slug": "routiners",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sampyeongohapp",
+    "scheme": "routiners",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.routiners.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.sampyeongohapp"
+      "package": "com.routiners.app"
     },
     "web": {
       "output": "static",
@@ -49,8 +50,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "25e92760-0973-4b08-b0e0-933e7f236f4f"
+        "projectId": "937a2b29-dfa1-49e2-8b9b-a14a50adc494"
       }
-    }
+    },
+    "owner": "sauhi"
   }
 }
