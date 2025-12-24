@@ -22,7 +22,8 @@ export const DEFAULT_ROUTE_INFO: RouteInfo = {
 
 export type WebToAppMessage =
   | { type: 'ROUTE_INFO'; payload: RouteInfo }
-  | { type: 'LOGOUT' };
+  | { type: 'LOGOUT' }
+  | { type: 'REQUEST_LOGIN' };
 
 export type AppToWebMessage =
   | { type: 'NAVIGATE_TO'; path: string }

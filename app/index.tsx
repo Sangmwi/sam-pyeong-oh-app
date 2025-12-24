@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +33,7 @@ export default function WebViewScreen() {
   const [routeInfo, setRouteInfo] = useState<RouteInfo>(DEFAULT_ROUTE_INFO);
 
   // 네이티브 인증 상태 관리 (WebView에 토큰 자동 전달)
-  const { signOut, syncTokenToWebView } = useAuth(webViewRef);
+  const { session, signOut, signInWithGoogle, syncTokenToWebView } = useAuth(webViewRef);
 
   useSmartBackHandler({ webViewRef, routeInfo });
 
@@ -66,6 +66,34 @@ export default function WebViewScreen() {
     console.log('[WebView] Redirecting to login...');
   }, [signOut]);
 
+  // 네이티브 OAuth 로그인 (웹에서 REQUEST_LOGIN 수신 시)
+  const handleNativeLogin = useCallback(async () => {
+    console.log('[WebView] Native login requested from web');
+    try {
+      await signInWithGoogle();
+      // 로그인 성공 시 onAuthStateChange가 토큰을 WebView에 전달하고
+      // 아래 useEffect에서 홈으로 이동 처리
+    } catch (error) {
+      console.error('[WebView] Native login failed:', error);
+      // 에러 시 웹에 알림 (로딩 해제)
+      webViewRef.current?.injectJavaScript(`
+        window.dispatchEvent(new CustomEvent('app-command', {
+          detail: { type: 'LOGIN_ERROR', error: 'Native login failed' }
+        }));
+        true;
+      `);
+    }
+  }, [signInWithGoogle]);
+
+  // 로그인 성공 시 홈으로 이동 (로그인 페이지에서 세션 생성된 경우)
+  useEffect(() => {
+    if (session && routeInfo.path === '/login') {
+      console.log('[WebView] Session detected on login page, redirecting to home');
+      setUrl(getInitialUrl());
+      setRouteInfo(DEFAULT_ROUTE_INFO);
+    }
+  }, [session, routeInfo.path]);
+
   // ─────────────────────────────────────────────────────────────────────────
   // Message Handlers
   // ─────────────────────────────────────────────────────────────────────────
@@ -81,11 +109,14 @@ export default function WebViewScreen() {
         case 'LOGOUT':
           handleLogout();
           break;
+        case 'REQUEST_LOGIN':
+          handleNativeLogin();
+          break;
       }
     } catch {
       // Ignore parse errors
     }
-  }, [handleLogout]);
+  }, [handleLogout, handleNativeLogin]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Navigation Handlers
