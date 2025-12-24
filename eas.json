@@ -7,7 +7,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_WEBVIEW_URL": "http://localhost:3000"
+        "EXPO_PUBLIC_WEBVIEW_URL": "http://localhost:3000",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://atsnifcqrmartpglrshq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_djWmiVAxU_OA3brLnPOhvw_xZCrGrfN"
       },
       "android": {
         "gradleCommand": ":app:assembleDebug"
@@ -19,7 +21,9 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app/"
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app/",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://atsnifcqrmartpglrshq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_djWmiVAxU_OA3brLnPOhvw_xZCrGrfN"
       },
       "android": {
         "buildType": "apk"
@@ -27,7 +31,9 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app"
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://routiners-web.vercel.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://atsnifcqrmartpglrshq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_djWmiVAxU_OA3brLnPOhvw_xZCrGrfN"
       },
       "android": {
         "buildType": "apk"
