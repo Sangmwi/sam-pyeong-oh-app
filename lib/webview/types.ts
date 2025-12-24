@@ -16,6 +16,13 @@ export const DEFAULT_ROUTE_INFO: RouteInfo = {
   canGoBack: false,
 };
 
+export const LOGIN_ROUTE_INFO: RouteInfo = {
+  path: '/login',
+  isTabRoute: false,
+  isHome: false,
+  canGoBack: false,
+};
+
 // ============================================================================
 // WebView Bridge Messages
 // ============================================================================

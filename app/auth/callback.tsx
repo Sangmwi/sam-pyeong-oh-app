@@ -7,26 +7,34 @@
 
 import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase/client';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
         console.log('[AuthCallback] Processing OAuth callback...');
-        console.log('[AuthCallback] Params:', params);
 
-        // URL에서 직접 파싱 (fragment 포함)
+        // use-auth.ts의 WebBrowser.openAuthSessionAsync에서 이미 토큰을 처리했을 수 있음
+        // 이 경우 세션이 이미 설정되어 있으므로 바로 홈으로 이동
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          console.log('[AuthCallback] Session already exists, redirecting to home');
+          router.replace('/');
+          return;
+        }
+
+        // 세션이 없는 경우에만 URL에서 토큰 파싱 시도
         const url = await Linking.getInitialURL();
-        console.log('[AuthCallback] Full URL:', url);
+        console.log('[AuthCallback] URL:', url);
 
         if (!url) {
-          console.error('[AuthCallback] No URL found');
+          console.log('[AuthCallback] No URL, redirecting to home');
           router.replace('/');
           return;
         }
@@ -38,39 +46,23 @@ export default function AuthCallback() {
         );
         const queryParams = new URLSearchParams(urlObj.search);
 
-        // access_token과 refresh_token 찾기
         const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
         const code = hashParams.get('code') || queryParams.get('code');
 
         if (accessToken && refreshToken) {
           console.log('[AuthCallback] Setting session from tokens...');
-
-          const { data, error } = await supabase.auth.setSession({
+          await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
-
-          if (error) {
-            console.error('[AuthCallback] Session set failed:', error.message);
-          } else {
-            console.log('[AuthCallback] Session established for:', data.user?.email);
-          }
         } else if (code) {
           console.log('[AuthCallback] Exchanging code for session...');
-
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-          if (error) {
-            console.error('[AuthCallback] Code exchange failed:', error.message);
-          } else {
-            console.log('[AuthCallback] Session established via code exchange');
-          }
+          await supabase.auth.exchangeCodeForSession(code);
         } else {
-          console.error('[AuthCallback] No tokens or code found in URL');
+          console.log('[AuthCallback] No tokens/code found, session may already be set');
         }
 
-        // 메인 화면으로 이동
         router.replace('/');
       } catch (error) {
         console.error('[AuthCallback] Error:', error);
