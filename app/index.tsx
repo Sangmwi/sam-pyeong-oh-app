@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
-import { LoadingIndicator } from '@/components/loading-indicator';
 import { SplashScreen } from '@/components/splash-screen';
 import { useSmartBackHandler } from '@/hooks/use-smart-back-handler';
 import { useAuth } from '@/hooks/use-auth';
@@ -32,6 +31,7 @@ export default function WebViewScreen() {
 
   const webViewRef = useRef<WebView>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo>(DEFAULT_ROUTE_INFO);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // 네이티브 인증 상태 관리 (WebView에 토큰 자동 전달)
   const {
@@ -110,25 +110,35 @@ export default function WebViewScreen() {
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
+  // 로딩 상태: 세션 체크 중 또는 최초 WebView 로딩 중
+  const showLoading = !isReady || isInitialLoad;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
       <StatusBar style={theme.statusBar} />
-      {!isReady ? (
-        <SplashScreen />
-      ) : (
+
+      {/* WebView는 항상 렌더링 (isReady 후) - 로딩 오버레이로 커버 */}
+      {isReady && (
         <WebView
           ref={webViewRef}
           source={{ uri: url }}
           style={styles.webview}
           userAgent={CHROME_USER_AGENT}
           {...WEBVIEW_BASE_PROPS}
-          renderLoading={LoadingIndicator}
+          onLoadEnd={() => setIsInitialLoad(false)}
           onMessage={handleMessage}
           onShouldStartLoadWithRequest={handleLoadRequest}
           onNavigationStateChange={handleNavigation}
           onError={handleWebViewError}
           onHttpError={handleHttpError}
         />
+      )}
+
+      {/* 로딩 오버레이 - WebView 위에 표시 */}
+      {showLoading && (
+        <View style={styles.loadingOverlay}>
+          <SplashScreen />
+        </View>
       )}
     </View>
   );
@@ -144,5 +154,8 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
 });

@@ -30,6 +30,6 @@ export const WEBVIEW_BASE_PROPS: Partial<WebViewProps> = {
   mediaPlaybackRequiresUserAction: false,
   scalesPageToFit: true,
 
-  // Loading
-  startInLoadingState: true,
+  // Loading - renderLoading 대신 오버레이 방식 사용
+  startInLoadingState: false,
 } as const;
