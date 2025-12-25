@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 
 import { useTheme, COLORS } from '@/lib/theme';
 
@@ -66,10 +67,16 @@ export function SplashScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Background decorations */}
-      <View style={[styles.decoration, styles.decorationTopRight, { backgroundColor: COLORS.primaryLight }]} />
-      <View style={[styles.decoration, styles.decorationBottomLeft, { backgroundColor: COLORS.primaryMedium }]} />
-      <View style={[styles.decoration, styles.decorationCenter, { backgroundColor: COLORS.primarySubtle }]} />
+      {/* Background decorations with blur */}
+      <View style={[styles.decoration, styles.decorationTopRight, { backgroundColor: COLORS.primaryLight }]}>
+        <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="light" />
+      </View>
+      <View style={[styles.decoration, styles.decorationBottomLeft, { backgroundColor: COLORS.primaryMedium }]}>
+        <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="light" />
+      </View>
+      <View style={[styles.decoration, styles.decorationCenter, { backgroundColor: COLORS.primarySubtle }]}>
+        <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="light" />
+      </View>
 
       {/* Logo with pulse */}
       <Animated.View style={[styles.logoContainer, { opacity: logoOpacity }]}>
@@ -106,10 +113,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Background decorations (blur effect simulated with large border radius)
+  // Background decorations with blur
   decoration: {
     position: 'absolute',
     borderRadius: 9999,
+    overflow: 'hidden',
   },
   decorationTopRight: {
     top: -80,
