@@ -52,16 +52,13 @@ export default function WebViewScreen() {
     webViewRef,
     signOut,
     signInWithGoogle,
-    setUrl,
-    setRouteInfo,
   });
 
-  // 세션 변경 감지 → URL 네비게이션 처리
+  // 세션 변경 감지 → 로그아웃 시 로그인 페이지 이동
   useSessionNavigation({
     session,
     isReady,
     isUrlInitialized,
-    routeInfo,
     url,
     setUrl,
     setRouteInfo,

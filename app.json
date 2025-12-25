@@ -41,7 +41,8 @@
           }
         }
       ],
-      "./plugins/withWebViewFileFix"
+      "./plugins/withWebViewFileFix",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

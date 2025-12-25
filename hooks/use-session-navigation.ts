@@ -1,10 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import {
-  DEFAULT_ROUTE_INFO,
   LOGIN_ROUTE_INFO,
-  getInitialUrl,
   getLoginUrl,
   type RouteInfo,
 } from '@/lib/webview';
@@ -17,7 +15,6 @@ type UseSessionNavigationOptions = {
   session: Session | null;
   isReady: boolean;
   isUrlInitialized: boolean;
-  routeInfo: RouteInfo;
   url: string;
   setUrl: (url: string) => void;
   setRouteInfo: (routeInfo: RouteInfo) => void;
@@ -28,35 +25,37 @@ type UseSessionNavigationOptions = {
 // ============================================================================
 
 /**
- * 세션 변경 감지 → URL 네비게이션 처리
- * (토큰 전달은 useAuth의 onAuthStateChange에서 자동 처리)
+ * 세션 변경 감지 → 로그아웃 시 로그인 페이지로 이동
+ *
+ * 로그인 성공 시 홈 리다이렉트는 웹(use-webview-bridge.ts)에서 처리합니다.
+ * 이 훅은 로그아웃 시에만 앱에서 WebView URL을 변경합니다.
  */
 export function useSessionNavigation({
   session,
   isReady,
   isUrlInitialized,
-  routeInfo,
   url,
   setUrl,
   setRouteInfo,
 }: UseSessionNavigationOptions): void {
+  // 이전 세션 상태 추적 (로그아웃 감지용)
+  const prevSessionRef = useRef<Session | null>(null);
+
   useEffect(() => {
     if (!isReady || !isUrlInitialized) return;
 
-    if (session) {
-      // 로그인됨: 로그인 페이지면 홈으로 이동
-      if (routeInfo.path === '/login' || url.includes('/login')) {
-        console.log('[WebView] Redirecting to home after login');
-        setUrl(getInitialUrl());
-        setRouteInfo(DEFAULT_ROUTE_INFO);
-      }
-    } else {
-      // 로그아웃됨: 로그인 페이지로 이동
+    const wasLoggedIn = !!prevSessionRef.current;
+    const isLoggedIn = !!session;
+
+    // 로그아웃 감지: 세션 있음 → 세션 없음
+    if (wasLoggedIn && !isLoggedIn) {
       console.log('[WebView] Session cleared, redirecting to login');
       if (!url.includes('/login')) {
         setUrl(getLoginUrl());
         setRouteInfo(LOGIN_ROUTE_INFO);
       }
     }
-  }, [session, isReady, isUrlInitialized, routeInfo.path, url, setUrl, setRouteInfo]);
+
+    prevSessionRef.current = session;
+  }, [session, isReady, isUrlInitialized, url, setUrl, setRouteInfo]);
 }

@@ -2,12 +2,7 @@ import { useCallback, RefObject } from 'react';
 import { WebView } from 'react-native-webview';
 import CookieManager from '@react-native-cookies/cookies';
 
-import {
-  LOGIN_ROUTE_INFO,
-  getInitialUrl,
-  getLoginUrl,
-  type RouteInfo,
-} from '@/lib/webview';
+import { getInitialUrl } from '@/lib/webview';
 
 // ============================================================================
 // Types
@@ -17,8 +12,6 @@ type UseAuthHandlersOptions = {
   webViewRef: RefObject<WebView | null>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  setUrl: (url: string) => void;
-  setRouteInfo: (routeInfo: RouteInfo) => void;
 };
 
 type UseAuthHandlersResult = {
@@ -37,19 +30,17 @@ export function useAuthHandlers({
   webViewRef,
   signOut,
   signInWithGoogle,
-  setUrl,
-  setRouteInfo,
 }: UseAuthHandlersOptions): UseAuthHandlersResult {
   /**
    * 로그아웃 처리
-   * 1. 네이티브 Supabase 세션 로그아웃 (SecureStore 토큰 삭제)
+   * 1. 네이티브 Supabase 세션 로그아웃 (SecureStore 토큰 삭제 + WebView에 CLEAR_SESSION 전송)
    * 2. 쿠키 삭제 시도 (레거시 호환)
-   * 3. 로그인 페이지로 이동
+   * → 로그인 페이지 이동은 useSessionNavigation에서 session null 감지하여 처리
    */
   const handleLogout = useCallback(async () => {
     console.log('[WebView] Logout received, clearing session...');
 
-    // 1. 네이티브 Supabase 세션 로그아웃
+    // 1. 네이티브 Supabase 세션 로그아웃 (clearSessionInWebView도 호출됨)
     await signOut();
 
     // 2. 쿠키 삭제 시도 (레거시 호환)
@@ -64,12 +55,9 @@ export function useAuthHandlers({
       console.log('[WebView] Cookie clear skipped (Android)');
     }
 
-    // 3. 로그인 페이지로 이동
-    setUrl(getLoginUrl());
-    setRouteInfo(LOGIN_ROUTE_INFO);
-
-    console.log('[WebView] Redirecting to login...');
-  }, [signOut, setUrl, setRouteInfo]);
+    // 로그인 페이지 이동은 useSessionNavigation에서 자동 처리
+    console.log('[WebView] Session cleared, navigation handled by useSessionNavigation');
+  }, [signOut]);
 
   /**
    * 네이티브 OAuth 로그인 (웹에서 REQUEST_LOGIN 수신 시)

@@ -1,25 +1,49 @@
 /**
  * 앱 인증 상태 관리 훅
  *
- * Native OAuth를 통해 Supabase 세션을 관리하고 WebView에 쿠키 세션을 설정합니다.
+ * @react-native-google-signin을 사용한 네이티브 Google Sign-In으로
+ * Supabase 세션을 관리하고 WebView에 쿠키 세션을 설정합니다.
  *
  * 인증 흐름:
- * 1. 앱에서 Google OAuth 완료 → access_token, refresh_token 획득
- * 2. 웹에 SET_SESSION 명령 전송
- * 3. 웹이 /api/auth/session 호출하여 쿠키 설정
- * 4. 웹이 SESSION_SET 응답으로 완료 알림
+ * 1. 네이티브 Google Sign-In → idToken 획득
+ * 2. Supabase signInWithIdToken으로 세션 생성
+ * 3. 웹에 SET_SESSION 명령 전송
+ * 4. 웹이 /api/auth/session 호출하여 쿠키 설정
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import WebView from 'react-native-webview';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import {
+  GoogleSignin,
+  isSuccessResponse,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { supabase } from '@/lib/supabase/client';
 import { WebToAppMessage } from '@/lib/webview';
 
-// Expo AuthSession 웜업 (iOS에서 브라우저 세션 재사용)
-WebBrowser.maybeCompleteAuthSession();
+// ============================================================================
+// Google Sign-In 설정
+// ============================================================================
+
+// Google Cloud Console에서 발급받은 Web Client ID
+// Android/iOS 앱에서도 Web Client ID를 사용해야 Supabase와 호환됩니다
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
+// 초기화 플래그 (한 번만 configure 호출)
+let isGoogleSignInConfigured = false;
+
+function configureGoogleSignIn() {
+  if (isGoogleSignInConfigured) return;
+
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID,
+    offlineAccess: true,
+  });
+
+  isGoogleSignInConfigured = true;
+}
 
 // ============================================================================
 // Constants
@@ -232,92 +256,65 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
   );
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Native Google OAuth
+  // Native Google Sign-In (signInWithIdToken 방식)
   // ──────────────────────────────────────────────────────────────────────────
 
   const signInWithGoogle = useCallback(async () => {
     try {
       setIsLoggingIn(true);
-      console.log(`${LOG_PREFIX} Starting native Google OAuth...`);
+      console.log(`${LOG_PREFIX} Starting native Google Sign-In...`);
 
-      // Deep link redirect URI 생성
-      const redirectTo = Linking.createURL('auth/callback');
-      console.log(`${LOG_PREFIX} Redirect URI:`, redirectTo);
+      // Google Play Services 확인
+      await GoogleSignin.hasPlayServices();
 
-      // Supabase OAuth URL 생성
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      // 네이티브 Google Sign-In UI 실행
+      const response = await GoogleSignin.signIn();
+
+      if (!isSuccessResponse(response)) {
+        console.log(`${LOG_PREFIX} Google Sign-In was cancelled`);
+        return;
+      }
+
+      const { idToken } = response.data;
+
+      if (!idToken) {
+        throw new Error('No idToken received from Google Sign-In');
+      }
+
+      console.log(`${LOG_PREFIX} Got idToken, exchanging with Supabase...`);
+
+      // Supabase에 idToken 전달하여 세션 생성
+      const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          },
-        },
+        token: idToken,
       });
 
       if (error) {
-        console.error(`${LOG_PREFIX} OAuth URL generation failed:`, error.message);
+        console.error(`${LOG_PREFIX} Supabase signInWithIdToken failed:`, error.message);
         throw error;
       }
 
-      if (!data?.url) {
-        throw new Error('No OAuth URL returned');
-      }
+      console.log(`${LOG_PREFIX} Session established for:`, data.user?.email);
+      // onAuthStateChange가 세션 변경을 감지하여 WebView에 전달합니다
 
-      console.log(`${LOG_PREFIX} Opening browser for OAuth...`);
-
-      // 네이티브 브라우저에서 OAuth 진행
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-      if (result.type === 'success' && result.url) {
-        console.log(`${LOG_PREFIX} OAuth callback received`);
-
-        // URL에서 토큰 추출
-        const url = new URL(result.url);
-        const params = new URLSearchParams(
-          url.hash.startsWith('#') ? url.hash.substring(1) : url.search
-        );
-
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        if (accessToken && refreshToken) {
-          console.log(`${LOG_PREFIX} Setting session from tokens...`);
-
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error(`${LOG_PREFIX} Session set failed:`, sessionError.message);
-            throw sessionError;
-          }
-
-          console.log(`${LOG_PREFIX} Session established for:`, sessionData.user?.email);
-        } else {
-          // PKCE 흐름
-          const code = params.get('code');
-          if (code) {
-            console.log(`${LOG_PREFIX} Exchanging code for session...`);
-            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              console.error(`${LOG_PREFIX} Code exchange failed:`, exchangeError.message);
-              throw exchangeError;
-            }
-          } else {
-            console.error(`${LOG_PREFIX} No tokens or code in callback URL`);
-          }
-        }
-      } else if (result.type === 'cancel') {
-        console.log(`${LOG_PREFIX} OAuth cancelled by user`);
-      } else {
-        console.log(`${LOG_PREFIX} OAuth result:`, result.type);
-      }
     } catch (error) {
-      console.error(`${LOG_PREFIX} OAuth error:`, error);
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            console.log(`${LOG_PREFIX} User cancelled the sign-in`);
+            break;
+          case statusCodes.IN_PROGRESS:
+            console.log(`${LOG_PREFIX} Sign-in already in progress`);
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            console.error(`${LOG_PREFIX} Play Services not available`);
+            break;
+          default:
+            console.error(`${LOG_PREFIX} Google Sign-In error:`, error.code, error.message);
+        }
+      } else {
+        console.error(`${LOG_PREFIX} Unexpected error:`, error);
+      }
       throw error;
     } finally {
       setIsLoggingIn(false);
@@ -329,6 +326,9 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
   // ──────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    // Google Sign-In 초기화 (앱 마운트 후 실행)
+    configureGoogleSignIn();
+
     // 1. 현재 세션 가져오기
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
@@ -360,6 +360,14 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
 
   const signOut = useCallback(async () => {
     console.log(`${LOG_PREFIX} Signing out...`);
+
+    // Google Sign-In 로그아웃
+    try {
+      await GoogleSignin.signOut();
+    } catch (e) {
+      console.log(`${LOG_PREFIX} Google signOut error (ignored):`, e);
+    }
+
     clearSessionInWebView();
     webReadyRef.current = false;
     await supabase.auth.signOut();
