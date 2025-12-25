@@ -1,13 +1,5 @@
 import { WebView } from 'react-native-webview';
-
-// ============================================================================
-// App → Web Command Types
-// ============================================================================
-
-export type AppCommand =
-  | { type: 'NAVIGATE_HOME' }
-  | { type: 'NAVIGATE_TO'; path: string }
-  | { type: 'GET_ROUTE_INFO' };
+import type { AppToWebMessage } from './types';
 
 // ============================================================================
 // Bridge Utilities
@@ -15,8 +7,8 @@ export type AppCommand =
 
 const EVENT_NAME = 'app-command';
 
-/** AppCommand를 실행 가능한 JavaScript 문자열로 변환 */
-const toInjectable = (command: AppCommand): string => {
+/** AppToWebMessage를 실행 가능한 JavaScript 문자열로 변환 */
+const toInjectable = (command: AppToWebMessage): string => {
   const payload = JSON.stringify(command);
   return `
     window.dispatchEvent(new CustomEvent('${EVENT_NAME}', {
@@ -29,7 +21,7 @@ const toInjectable = (command: AppCommand): string => {
 /** WebView에 명령 전송 */
 export const sendCommand = (
   webViewRef: React.RefObject<WebView | null>,
-  command: AppCommand
+  command: AppToWebMessage
 ): void => {
   webViewRef.current?.injectJavaScript(toInjectable(command));
 };
@@ -39,6 +31,10 @@ export const sendCommand = (
 // ============================================================================
 
 export const WebViewBridge = {
+  // ──────────────────────────────────────────────────────────────────────────
+  // Navigation
+  // ──────────────────────────────────────────────────────────────────────────
+
   /** 홈으로 이동 */
   navigateHome: (webViewRef: React.RefObject<WebView | null>) => {
     sendCommand(webViewRef, { type: 'NAVIGATE_HOME' });
@@ -52,6 +48,33 @@ export const WebViewBridge = {
   /** 현재 경로 정보 요청 */
   requestRouteInfo: (webViewRef: React.RefObject<WebView | null>) => {
     sendCommand(webViewRef, { type: 'GET_ROUTE_INFO' });
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Session
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** 세션 설정 (로그인 완료 후) */
+  setSession: (
+    webViewRef: React.RefObject<WebView | null>,
+    accessToken: string,
+    refreshToken: string
+  ) => {
+    sendCommand(webViewRef, {
+      type: 'SET_SESSION',
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  },
+
+  /** 세션 삭제 (로그아웃) */
+  clearSession: (webViewRef: React.RefObject<WebView | null>) => {
+    sendCommand(webViewRef, { type: 'CLEAR_SESSION' });
+  },
+
+  /** 로그인 에러 전달 */
+  sendLoginError: (webViewRef: React.RefObject<WebView | null>, error: string) => {
+    sendCommand(webViewRef, { type: 'LOGIN_ERROR', error });
   },
 };
 

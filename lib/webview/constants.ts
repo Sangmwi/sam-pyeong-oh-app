@@ -1,4 +1,23 @@
 import { Platform } from 'react-native';
+import type { RouteInfo } from './types';
+
+// ============================================================================
+// Route Constants
+// ============================================================================
+
+export const DEFAULT_ROUTE_INFO: RouteInfo = {
+  path: '/',
+  isTabRoute: true,
+  isHome: true,
+  canGoBack: false,
+};
+
+export const LOGIN_ROUTE_INFO: RouteInfo = {
+  path: '/login',
+  isTabRoute: false,
+  isHome: false,
+  canGoBack: false,
+};
 
 // ============================================================================
 // Platform Detection
