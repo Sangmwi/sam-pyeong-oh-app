@@ -5,13 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { SplashScreen } from '@/components/splash-screen';
-import { useSmartBackHandler } from '@/hooks/use-smart-back-handler';
-import { useAuth } from '@/hooks/use-auth';
-import { useAuthHandlers } from '@/hooks/use-auth-handlers';
-import { useInitialUrl } from '@/hooks/use-initial-url';
-import { useSessionNavigation } from '@/hooks/use-session-navigation';
-import { useWebViewNavigation } from '@/hooks/use-webview-navigation';
-import { useWebViewErrors } from '@/hooks/use-webview-errors';
+import {
+  useSmartBackHandler,
+  useAuth,
+  useAuthHandlers,
+  useInitialUrl,
+  useSessionNavigation,
+  useWebViewNavigation,
+  useWebViewErrors,
+} from '@/hooks';
 import { useTheme } from '@/lib/theme';
 import {
   CHROME_USER_AGENT,
