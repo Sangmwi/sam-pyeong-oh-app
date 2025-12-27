@@ -9,9 +9,14 @@ import { useColorScheme } from 'react-native';
  */
 export const COLORS = {
   primary: '#22c55e', // green-500 (웹과 동일)
+  // 라이트모드용 블러 색상
   primaryLight: 'rgba(34, 197, 94, 0.2)', // primary/20
   primaryMedium: 'rgba(34, 197, 94, 0.15)', // primary/15
   primarySubtle: 'rgba(34, 197, 94, 0.1)', // primary/10
+  // 다크모드용 블러 색상 (배경에 자연스럽게 녹아드는 은은한 초록빛)
+  primaryDarkLight: 'rgba(34, 197, 94, 0.12)', // primary/12
+  primaryDarkMedium: 'rgba(34, 197, 94, 0.08)', // primary/8
+  primaryDarkSubtle: 'rgba(34, 197, 94, 0.05)', // primary/5
   textMuted: '#94a3b8', // slate-400
   textMutedDark: '#64748b', // slate-500
 } as const;

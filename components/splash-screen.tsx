@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  useColorScheme,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 
@@ -25,7 +26,23 @@ const DELAYED_TEXT_MS = 1000;
 
 export function SplashScreen() {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [showDelayedText, setShowDelayedText] = useState(false);
+
+  // 테마에 따른 블러 색상 및 tint 설정
+  const blurColors = isDark
+    ? {
+        light: COLORS.primaryDarkLight,
+        medium: COLORS.primaryDarkMedium,
+        subtle: COLORS.primaryDarkSubtle,
+      }
+    : {
+        light: COLORS.primaryLight,
+        medium: COLORS.primaryMedium,
+        subtle: COLORS.primarySubtle,
+      };
+  const blurTint = isDark ? 'dark' : 'light';
 
   // Animations
   const logoOpacity = useRef(new Animated.Value(0.7)).current;
@@ -68,14 +85,14 @@ export function SplashScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Background decorations with blur */}
-      <View style={[styles.decoration, styles.decorationTopRight, { backgroundColor: COLORS.primaryLight }]}>
-        <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="light" />
+      <View style={[styles.decoration, styles.decorationTopRight, { backgroundColor: blurColors.light }]}>
+        <BlurView intensity={isDark ? 40 : 80} style={StyleSheet.absoluteFill} tint={blurTint} />
       </View>
-      <View style={[styles.decoration, styles.decorationBottomLeft, { backgroundColor: COLORS.primaryMedium }]}>
-        <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="light" />
+      <View style={[styles.decoration, styles.decorationBottomLeft, { backgroundColor: blurColors.medium }]}>
+        <BlurView intensity={isDark ? 40 : 80} style={StyleSheet.absoluteFill} tint={blurTint} />
       </View>
-      <View style={[styles.decoration, styles.decorationCenter, { backgroundColor: COLORS.primarySubtle }]}>
-        <BlurView intensity={60} style={StyleSheet.absoluteFill} tint="light" />
+      <View style={[styles.decoration, styles.decorationCenter, { backgroundColor: blurColors.subtle }]}>
+        <BlurView intensity={isDark ? 30 : 60} style={StyleSheet.absoluteFill} tint={blurTint} />
       </View>
 
       {/* Logo with pulse */}

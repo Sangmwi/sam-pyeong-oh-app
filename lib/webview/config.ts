@@ -15,6 +15,12 @@ export const WEBVIEW_BASE_PROPS: Partial<WebViewProps> = {
   // Scroll behavior
   bounces: false,
   overScrollMode: 'never',
+  showsVerticalScrollIndicator: false,
+  showsHorizontalScrollIndicator: false,
+
+  // Pinch zoom - 비활성화 (네이티브 앱 UX)
+  setBuiltInZoomControls: false,
+  scalesPageToFit: false,
 
   // OAuth & Cookie
   originWhitelist: ['*'],
@@ -28,7 +34,6 @@ export const WEBVIEW_BASE_PROPS: Partial<WebViewProps> = {
   domStorageEnabled: true,
   cacheEnabled: true,
   mediaPlaybackRequiresUserAction: false,
-  scalesPageToFit: true,
 
   // Loading - renderLoading 대신 오버레이 방식 사용
   startInLoadingState: false,
