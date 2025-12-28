@@ -1,5 +1,5 @@
 {
-  "name": "sam-pyeong-oh-app",
+  "name": "routiners-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -11,7 +11,7 @@
     "ios:clean": "expo prebuild --clean --platform ios && expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "sync:webview-types": "cp ../sam-pyeong-oh-web/lib/webview/types.ts ./lib/webview/types.ts && echo '✅ WebView types synced from web'"
+    "sync:webview-types": "cp ../routiners-web/lib/webview/types.ts ./lib/webview/types.ts && echo '✅ WebView types synced from web'"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
