@@ -95,14 +95,11 @@ export const useImagePicker = (webViewRef: RefObject<WebView | null>) => {
    * 갤러리에서 선택
    */
   const launchGallery = useCallback(async (): Promise<ImagePickerResult> => {
-    console.log('[useImagePicker] launchGallery called');
     const hasPermission = await requestGalleryPermission();
-    console.log('[useImagePicker] Gallery permission:', hasPermission);
     if (!hasPermission) {
       return { success: false, error: '갤러리 접근 권한이 필요합니다.' };
     }
 
-    console.log('[useImagePicker] Launching image library...');
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
@@ -110,7 +107,6 @@ export const useImagePicker = (webViewRef: RefObject<WebView | null>) => {
       base64: true,
       exif: false,
     });
-    console.log('[useImagePicker] Image library result:', result.canceled ? 'canceled' : 'success');
 
     if (result.canceled) {
       return { success: false, cancelled: true };
@@ -141,15 +137,11 @@ export const useImagePicker = (webViewRef: RefObject<WebView | null>) => {
 
   /**
    * ActionSheet 선택 핸들러
-   * 주의: ActionSheet는 onClose를 먼저 호출하고, setTimeout 후에 onPress를 호출함
-   * 따라서 resolveRef가 null이면 이미 처리된 것이므로 무시
+   * 주의: onPress가 먼저 호출되고 onClose가 나중에 호출됨
+   * resolveRef가 null이면 이미 처리된 것이므로 무시
    */
   const handleSelect = useCallback((source: SourceSelection) => {
-    console.log('[useImagePicker] handleSelect called:', source, 'resolveRef exists:', !!resolveRef);
-    if (!resolveRef) {
-      console.log('[useImagePicker] handleSelect: resolveRef is null, ignoring');
-      return;
-    }
+    if (!resolveRef) return;
     setSheetVisible(false);
     resolveRef(source);
     setResolveRef(null);
@@ -161,20 +153,16 @@ export const useImagePicker = (webViewRef: RefObject<WebView | null>) => {
   const handleImagePickerRequest = useCallback(
     async (request: ImagePickerRequest) => {
       const { requestId, source } = request;
-      console.log('[useImagePicker] handleImagePickerRequest called, requestId:', requestId, 'source:', source);
 
       try {
         let result: ImagePickerResult;
 
         if (source === 'camera') {
-          console.log('[useImagePicker] Launching camera');
           result = await launchCamera();
         } else if (source === 'gallery') {
-          console.log('[useImagePicker] Launching gallery');
           result = await launchGallery();
         } else {
           // 'both' - 커스텀 ActionSheet로 사용자에게 선택하게 함
-          console.log('[useImagePicker] Showing source picker');
           const selectedSource = await showSourcePicker();
 
           if (selectedSource === 'cancel') {

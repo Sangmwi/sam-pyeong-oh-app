@@ -93,7 +93,6 @@ export default function WebViewScreen() {
   const handleMessage = useCallback((event: WebViewMessageEvent) => {
     try {
       const message: WebToAppMessage = JSON.parse(event.nativeEvent.data);
-      console.log('[WebView] Received message:', message.type, message);
       messageHandlers[message.type]?.(message);
     } catch {
       // Ignore parse errors
