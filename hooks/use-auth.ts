@@ -21,7 +21,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { supabase } from '@/lib/supabase/client';
-import { WebToAppMessage } from '@/lib/webview';
+import { WebToAppMessage, WebViewBridge } from '@/lib/webview';
 
 // ============================================================================
 // Google Sign-In 설정
@@ -99,25 +99,7 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
         return false;
       }
 
-      const script = `
-        (function() {
-          try {
-            const event = new CustomEvent('app-command', {
-              detail: {
-                type: 'SET_SESSION',
-                access_token: ${JSON.stringify(accessToken)},
-                refresh_token: ${JSON.stringify(refreshToken)}
-              }
-            });
-            window.dispatchEvent(event);
-          } catch (e) {
-            console.error('[App→Web] SET_SESSION error:', e);
-          }
-        })();
-        true;
-      `;
-
-      webViewRef.current.injectJavaScript(script);
+      WebViewBridge.setSession(webViewRef, accessToken, refreshToken);
       console.log(`${LOG_PREFIX} Session sent to WebView`);
       return true;
     },
@@ -130,21 +112,7 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
   const clearSessionInWebView = useCallback(() => {
     if (!webViewRef.current) return;
 
-    const script = `
-      (function() {
-        try {
-          const event = new CustomEvent('app-command', {
-            detail: { type: 'CLEAR_SESSION' }
-          });
-          window.dispatchEvent(event);
-        } catch (e) {
-          console.error('[App→Web] CLEAR_SESSION error:', e);
-        }
-      })();
-      true;
-    `;
-
-    webViewRef.current.injectJavaScript(script);
+    WebViewBridge.clearSession(webViewRef);
     console.log(`${LOG_PREFIX} Session clear sent to WebView`);
   }, [webViewRef]);
 

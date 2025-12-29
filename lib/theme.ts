@@ -5,20 +5,43 @@ import { useColorScheme } from 'react-native';
 // ============================================================================
 
 /**
- * 공통 색상
+ * 공통 색상 (웹 globals.css와 일치)
  */
 export const COLORS = {
-  primary: '#22c55e', // green-500 (웹과 동일)
-  // 라이트모드용 블러 색상
-  primaryLight: 'rgba(34, 197, 94, 0.2)', // primary/20
-  primaryMedium: 'rgba(34, 197, 94, 0.15)', // primary/15
-  primarySubtle: 'rgba(34, 197, 94, 0.1)', // primary/10
-  // 다크모드용 블러 색상 (배경에 자연스럽게 녹아드는 은은한 초록빛)
-  primaryDarkLight: 'rgba(34, 197, 94, 0.12)', // primary/12
-  primaryDarkMedium: 'rgba(34, 197, 94, 0.08)', // primary/8
-  primaryDarkSubtle: 'rgba(34, 197, 94, 0.05)', // primary/5
+  // Primary (Green Brand)
+  primary: '#50A76C', // green-500 (웹 메인 브랜드)
+  primaryLight: '#5fc07f', // green-400 (다크모드용)
+  primaryDark: '#328a4d', // green-600
+  primaryDarker: '#1B6523', // green-700
+
+  // Green Scale
+  green50: '#f0faf3',
+  green100: '#dbf5e2',
+  green200: '#b9eac8',
+  green300: '#88d9a2',
+  green400: '#5fc07f',
+  green500: '#50A76C',
+  green600: '#328a4d',
+  green700: '#1B6523',
+  green800: '#1a5421',
+  green900: '#17451c',
+  green950: '#0a2610',
+
+  // Slate Scale (다크모드용)
+  slate50: '#f8fafc',
+  slate100: '#f1f5f9',
+  slate200: '#e2e8f0',
+  slate400: '#94a3b8',
+  slate500: '#64748b',
+  slate700: '#334155',
+  slate800: '#1e293b',
+  slate900: '#0f172a',
+
+  // Semantic
   textMuted: '#94a3b8', // slate-400
   textMutedDark: '#64748b', // slate-500
+  destructive: '#ef4444', // red-500
+  destructiveDark: '#dc2626', // red-600
 } as const;
 
 /**
@@ -42,8 +65,64 @@ export const WEBVIEW_THEME = {
 export type ThemeMode = keyof typeof WEBVIEW_THEME;
 export type Theme = (typeof WEBVIEW_THEME)[ThemeMode];
 
+/**
+ * 컴포넌트용 확장 테마 (웹 디자인 시스템과 일치)
+ */
+export const COMPONENT_THEME = {
+  light: {
+    // Backgrounds
+    background: '#f8faf8',
+    card: '#ffffff',
+    muted: '#e8f4eb',
+    overlay: 'rgba(0, 0, 0, 0.5)',
+
+    // Text
+    text: '#0a2610', // green-950
+    textSecondary: '#328a4d', // green-600
+    textMuted: '#64748b', // slate-500
+
+    // Borders
+    border: '#b9eac8', // green-200
+    borderLight: '#dbf5e2', // green-100
+
+    // Primary
+    primary: '#50A76C',
+    primaryForeground: '#ffffff',
+
+    // Destructive
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+  },
+  dark: {
+    // Backgrounds
+    background: '#0f172a', // slate-900
+    card: '#1e293b', // slate-800
+    muted: '#0f172a', // slate-900
+    overlay: 'rgba(0, 0, 0, 0.7)',
+
+    // Text
+    text: '#f1f5f9', // slate-100
+    textSecondary: '#e2e8f0', // slate-200
+    textMuted: '#94a3b8', // slate-400
+
+    // Borders
+    border: '#334155', // slate-700
+    borderLight: '#1e293b', // slate-800
+
+    // Primary
+    primary: '#5fc07f', // green-400
+    primaryForeground: '#0a2610', // green-950
+
+    // Destructive
+    destructive: '#ef4444',
+    destructiveForeground: '#ffffff',
+  },
+} as const;
+
+export type ComponentTheme = (typeof COMPONENT_THEME)[ThemeMode];
+
 // ============================================================================
-// Hook
+// Hooks
 // ============================================================================
 
 /**
@@ -53,4 +132,16 @@ export function useTheme(): Theme {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   return isDark ? WEBVIEW_THEME.dark : WEBVIEW_THEME.light;
+}
+
+/**
+ * 현재 시스템 테마에 맞는 컴포넌트 테마 반환
+ */
+export function useComponentTheme(): ComponentTheme & { isDark: boolean } {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  return {
+    ...(isDark ? COMPONENT_THEME.dark : COMPONENT_THEME.light),
+    isDark,
+  };
 }

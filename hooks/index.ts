@@ -25,6 +25,7 @@ export { useWebViewErrors } from './use-webview-errors';
 export { useSessionNavigation } from './use-session-navigation';
 export { useInitialUrl } from './use-initial-url';
 export { useSmartBackHandler } from './use-smart-back-handler';
+export { useImagePicker } from './use-image-picker';
 
 // ============================================================================
 // UI Hooks

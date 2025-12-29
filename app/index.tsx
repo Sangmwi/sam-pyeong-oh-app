@@ -13,6 +13,7 @@ import {
   useSessionNavigation,
   useWebViewNavigation,
   useWebViewErrors,
+  useImagePicker,
 } from '@/hooks';
 import { useTheme } from '@/lib/theme';
 import {
@@ -49,6 +50,9 @@ export default function WebViewScreen() {
 
   useSmartBackHandler({ webViewRef, routeInfo });
 
+  // Image Picker (네이티브 이미지 선택)
+  const { handleImagePickerRequest, ImagePickerSheet } = useImagePicker(webViewRef);
+
   // Auth Handlers (로그아웃, 네이티브 로그인)
   const { handleLogout, handleNativeLogin } = useAuthHandlers({
     webViewRef,
@@ -75,16 +79,21 @@ export default function WebViewScreen() {
     ROUTE_INFO: (msg) => setRouteInfo((msg as { type: 'ROUTE_INFO'; payload: RouteInfo }).payload),
     LOGOUT: () => handleLogout(),
     REQUEST_LOGIN: () => handleNativeLogin(),
+    REQUEST_IMAGE_PICKER: (msg) => {
+      const { requestId, source } = msg as { type: 'REQUEST_IMAGE_PICKER'; requestId: string; source: 'camera' | 'gallery' | 'both' };
+      handleImagePickerRequest({ requestId, source });
+    },
     // 인증 관련 메시지는 useAuth에서 처리
     WEB_READY: handleWebMessage,
     SESSION_SET: handleWebMessage,
     REQUEST_SESSION_REFRESH: handleWebMessage,
     SESSION_EXPIRED: handleWebMessage,
-  }), [handleLogout, handleNativeLogin, handleWebMessage]);
+  }), [handleLogout, handleNativeLogin, handleImagePickerRequest, handleWebMessage]);
 
   const handleMessage = useCallback((event: WebViewMessageEvent) => {
     try {
       const message: WebToAppMessage = JSON.parse(event.nativeEvent.data);
+      console.log('[WebView] Received message:', message.type, message);
       messageHandlers[message.type]?.(message);
     } catch {
       // Ignore parse errors
@@ -139,6 +148,9 @@ export default function WebViewScreen() {
           <SplashScreen />
         </View>
       )}
+
+      {/* Image Picker ActionSheet */}
+      {ImagePickerSheet}
     </View>
   );
 }

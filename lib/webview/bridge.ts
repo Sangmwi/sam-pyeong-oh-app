@@ -76,5 +76,22 @@ export const WebViewBridge = {
   sendLoginError: (webViewRef: React.RefObject<WebView | null>, error: string) => {
     sendCommand(webViewRef, { type: 'LOGIN_ERROR', error });
   },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Image Picker
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** 이미지 피커 결과 전달 */
+  sendImagePickerResult: (
+    webViewRef: React.RefObject<WebView | null>,
+    requestId: string,
+    result: import('./types').ImagePickerResult
+  ) => {
+    sendCommand(webViewRef, {
+      type: 'IMAGE_PICKER_RESULT',
+      requestId,
+      result,
+    });
+  },
 };
 
