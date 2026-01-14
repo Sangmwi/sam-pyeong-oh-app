@@ -209,6 +209,11 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
           if (sessionSetResolverRef.current) {
             sessionSetResolverRef.current(message.success);
           }
+          // 세션 설정 실패 시 무효 토큰 정리 (다음 재시작 시 다시 실패하지 않도록)
+          if (!message.success) {
+            console.log(`${LOG_PREFIX} Session set failed, clearing local session`);
+            supabase.auth.signOut();
+          }
           break;
 
         case 'REQUEST_SESSION_REFRESH':
@@ -312,11 +317,21 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
     // Google Sign-In 초기화 (앱 마운트 후 실행)
     configureGoogleSignIn();
 
-    // 1. 현재 세션 가져오기
+    // 1. 현재 세션 가져오기 (5초 타임아웃)
+    const sessionTimeout = setTimeout(() => {
+      console.log(`${LOG_PREFIX} Session check timeout, proceeding without session`);
+      setIsReady(true);
+    }, 5000);
+
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      clearTimeout(sessionTimeout);
       setSession(currentSession);
       setIsReady(true);
       console.log(`${LOG_PREFIX} Initial session:`, currentSession ? 'authenticated' : 'none');
+    }).catch((error) => {
+      clearTimeout(sessionTimeout);
+      console.error(`${LOG_PREFIX} Session check failed:`, error);
+      setIsReady(true);
     });
 
     // 2. 세션 변경 구독
