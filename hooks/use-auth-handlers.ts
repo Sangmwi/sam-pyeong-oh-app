@@ -33,17 +33,21 @@ export function useAuthHandlers({
 }: UseAuthHandlersOptions): UseAuthHandlersResult {
   /**
    * 로그아웃 처리
-   * 1. 네이티브 Supabase 세션 로그아웃 (SecureStore 토큰 삭제 + WebView에 CLEAR_SESSION 전송)
-   * 2. 쿠키 삭제 시도 (레거시 호환)
+   * 1. WebView 히스토리 클리어 (뒤로가기 방지)
+   * 2. 네이티브 Supabase 세션 로그아웃 (SecureStore 토큰 삭제 + WebView에 CLEAR_SESSION 전송)
+   * 3. 쿠키 삭제 시도 (레거시 호환)
    * → 로그인 페이지 이동은 useSessionNavigation에서 session null 감지하여 처리
    */
   const handleLogout = useCallback(async () => {
     console.log('[WebView] Logout received, clearing session...');
 
-    // 1. 네이티브 Supabase 세션 로그아웃 (clearSessionInWebView도 호출됨)
+    // 1. WebView 히스토리 클리어 (뒤로가기 방지) - Android만 지원
+    (webViewRef.current as any)?.clearHistory?.();
+
+    // 2. 네이티브 Supabase 세션 로그아웃 (clearSessionInWebView도 호출됨)
     await signOut();
 
-    // 2. 쿠키 삭제 시도 (레거시 호환)
+    // 3. 쿠키 삭제 시도 (레거시 호환)
     try {
       const webUrl = getInitialUrl();
       const cookies = await CookieManager.get(webUrl);
@@ -57,7 +61,7 @@ export function useAuthHandlers({
 
     // 로그인 페이지 이동은 useSessionNavigation에서 자동 처리
     console.log('[WebView] Session cleared, navigation handled by useSessionNavigation');
-  }, [signOut]);
+  }, [signOut, webViewRef]);
 
   /**
    * 네이티브 OAuth 로그인 (웹에서 REQUEST_LOGIN 수신 시)

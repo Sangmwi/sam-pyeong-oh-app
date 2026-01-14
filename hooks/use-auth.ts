@@ -135,12 +135,12 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
           sessionSetResolverRef.current(false);
         }
 
-        // 타임아웃 설정 (10초 - 느린 네트워크 대응)
+        // 타임아웃 설정 (15초 - 느린 네트워크 대응)
         const timeoutId = setTimeout(() => {
           sessionSetResolverRef.current = null;
           console.log(`${LOG_PREFIX} Session set timeout - web may have navigated already`);
           resolve(false);
-        }, 10000);
+        }, 15000);
 
         // resolver 저장
         sessionSetResolverRef.current = (success: boolean) => {
@@ -269,18 +269,12 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
 
       // onAuthStateChange보다 먼저 직접 WebView에 세션 전달 (race condition 방지)
       if (data.session) {
-        console.log(`${LOG_PREFIX} Syncing session to WebView immediately...`);
+        console.log(`${LOG_PREFIX} Syncing session to WebView...`);
         sessionSyncingRef.current = true;
         try {
-          const syncSuccess = await syncSessionToWebView(data.session);
-          // 세션 설정 성공 후 홈으로 이동 명령 전송 (웹 네비게이션 실패 대비)
-          if (syncSuccess) {
-            console.log(`${LOG_PREFIX} Session synced, navigating to home...`);
-            WebViewBridge.navigateHome(webViewRef);
-          } else {
-            // 타임아웃 또는 실패 - 웹에서 이미 네비게이션했을 수 있음
-            console.log(`${LOG_PREFIX} Session sync failed/timed out, relying on web navigation`);
-          }
+          // 세션 전달만 담당, 네비게이션은 웹에서 처리
+          await syncSessionToWebView(data.session);
+          console.log(`${LOG_PREFIX} Session synced, web will handle navigation`);
         } finally {
           sessionSyncingRef.current = false;
         }

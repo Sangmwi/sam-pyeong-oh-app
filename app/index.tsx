@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
@@ -119,6 +120,13 @@ export default function WebViewScreen() {
 
   // 로딩 상태: 세션 체크 중 또는 최초 WebView 로딩 중
   const showLoading = !isReady || isInitialLoad;
+
+  // 로딩 완료 시 네이티브 스플래시 숨기기
+  useEffect(() => {
+    if (!showLoading) {
+      ExpoSplashScreen.hideAsync();
+    }
+  }, [showLoading]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: theme.background }]}>
