@@ -267,7 +267,12 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
       // onAuthStateChange보다 먼저 직접 WebView에 세션 전달 (race condition 방지)
       if (data.session) {
         console.log(`${LOG_PREFIX} Syncing session to WebView immediately...`);
-        await syncSessionToWebView(data.session);
+        const syncSuccess = await syncSessionToWebView(data.session);
+        // 세션 설정 성공 후 홈으로 이동 명령 전송 (웹 네비게이션 실패 대비)
+        if (syncSuccess) {
+          console.log(`${LOG_PREFIX} Session synced, navigating to home...`);
+          WebViewBridge.navigateHome(webViewRef);
+        }
       }
 
     } catch (error) {
