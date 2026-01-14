@@ -2,13 +2,13 @@
  * WebView 에러 핸들러 훅
  *
  * WebView 연결 실패 및 HTTP 에러를 처리합니다.
- * 디버깅용 Alert로 상세 정보를 표시합니다.
+ * - 연결 에러: 사용자에게 재시도 옵션 제공
+ * - HTTP 에러: 5xx만 표시, 4xx(인증 에러)는 웹에서 처리하도록 무시
  */
 
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import type WebView from 'react-native-webview';
-import { FALLBACK_URL } from '@/lib/webview';
 
 // ============================================================================
 // Types
@@ -32,7 +32,6 @@ interface HttpErrorEvent {
 
 interface UseWebViewErrorsParams {
   webViewRef: React.RefObject<WebView | null>;
-  setUrl: (url: string) => void;
 }
 
 interface UseWebViewErrorsResult {
@@ -48,7 +47,6 @@ interface UseWebViewErrorsResult {
 
 export function useWebViewErrors({
   webViewRef,
-  setUrl,
 }: UseWebViewErrorsParams): UseWebViewErrorsResult {
   /**
    * WebView 연결 에러 처리
@@ -58,38 +56,43 @@ export function useWebViewErrors({
     (syntheticEvent: WebViewErrorEvent) => {
       const { description, code, url: errorUrl } = syntheticEvent.nativeEvent;
 
-      console.log('[WebView] 🔴 onError triggered:', { description, code, errorUrl });
+      console.log('[WebView] 🔴 Connection error:', { description, code, errorUrl });
 
-      // 디버깅용 상세 Alert
       Alert.alert(
         '연결 실패',
-        `서버에 연결할 수 없습니다.\n\n[DEBUG]\nURL: ${errorUrl}\nCode: ${code}\nDesc: ${description}`,
+        '서버에 연결할 수 없습니다.\n인터넷 연결을 확인해주세요.',
         [
-          { text: '홈으로', onPress: () => setUrl(FALLBACK_URL) },
-          { text: '재시도', onPress: () => webViewRef.current?.reload(), style: 'cancel' },
-          { text: '뒤로가기', onPress: () => webViewRef.current?.goBack() },
+          { text: '재시도', onPress: () => webViewRef.current?.reload() },
         ]
       );
     },
-    [webViewRef, setUrl]
+    [webViewRef]
   );
 
   /**
    * HTTP 에러 처리
-   * 4xx, 5xx 응답 등
+   * - 401, 403: 웹에서 처리 (리다이렉트)
+   * - 5xx: 서버 오류 Alert
+   * - 기타: 로그만 출력
    */
   const handleHttpError = useCallback(
     (event: HttpErrorEvent) => {
       const { url: errorUrl, statusCode, description } = event.nativeEvent;
 
-      console.log('[WebView] 🟠 onHttpError:', { errorUrl, statusCode, description });
+      console.log('[WebView] 🟠 HTTP error:', { errorUrl, statusCode, description });
 
-      if (!errorUrl?.includes('localhost')) {
+      // 401, 403 인증 에러는 웹에서 처리 (무시)
+      if (statusCode === 401 || statusCode === 403) {
+        console.log('[WebView] Auth error ignored - handled by web');
+        return;
+      }
+
+      // 5xx 서버 에러만 사용자에게 표시
+      if (statusCode && statusCode >= 500) {
         Alert.alert(
-          'HTTP 에러',
-          `[DEBUG]\nURL: ${errorUrl}\nStatus: ${statusCode}\nDesc: ${description}`,
+          '서버 오류',
+          '잠시 후 다시 시도해주세요.',
           [
-            { text: '확인' },
             { text: '재시도', onPress: () => webViewRef.current?.reload() },
           ]
         );

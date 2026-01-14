@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -72,33 +72,54 @@ export default function WebViewScreen() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Message Handlers
+  // Message Handler (switch-case로 타입 내로잉)
   // ─────────────────────────────────────────────────────────────────────────
-
-  // 선언적 메시지 핸들러 맵
-  const messageHandlers = useMemo<Record<WebToAppMessage['type'], (msg: WebToAppMessage) => void>>(() => ({
-    ROUTE_INFO: (msg) => setRouteInfo((msg as { type: 'ROUTE_INFO'; payload: RouteInfo }).payload),
-    LOGOUT: () => handleLogout(),
-    REQUEST_LOGIN: () => handleNativeLogin(),
-    REQUEST_IMAGE_PICKER: (msg) => {
-      const { requestId, source } = msg as { type: 'REQUEST_IMAGE_PICKER'; requestId: string; source: 'camera' | 'gallery' | 'both' };
-      handleImagePickerRequest({ requestId, source });
-    },
-    // 인증 관련 메시지는 useAuth에서 처리
-    WEB_READY: handleWebMessage,
-    SESSION_SET: handleWebMessage,
-    REQUEST_SESSION_REFRESH: handleWebMessage,
-    SESSION_EXPIRED: handleWebMessage,
-  }), [handleLogout, handleNativeLogin, handleImagePickerRequest, handleWebMessage]);
 
   const handleMessage = useCallback((event: WebViewMessageEvent) => {
     try {
-      const message: WebToAppMessage = JSON.parse(event.nativeEvent.data);
-      messageHandlers[message.type]?.(message);
+      const msg: WebToAppMessage = JSON.parse(event.nativeEvent.data);
+
+      switch (msg.type) {
+        // 라우트 → 실제 목적지 도착 시 스플래시 숨김
+        case 'ROUTE_INFO':
+          setRouteInfo(msg.payload);
+          if (msg.payload.path !== '/app-init') {
+            setIsInitialLoad(false);
+          }
+          break;
+
+        // 인증 요청
+        case 'LOGOUT':
+          handleLogout();
+          break;
+        case 'REQUEST_LOGIN':
+          handleNativeLogin();
+          break;
+
+        // 이미지 선택
+        case 'REQUEST_IMAGE_PICKER':
+          handleImagePickerRequest({
+            requestId: msg.requestId,
+            source: msg.source,
+          });
+          break;
+
+        // 웹 준비 (스플래시는 ROUTE_INFO에서 처리)
+        case 'WEB_READY':
+          handleWebMessage(msg);
+          break;
+
+        // 세션 (useAuth 위임)
+        case 'SESSION_SET':
+        case 'REQUEST_SESSION_REFRESH':
+        case 'SESSION_EXPIRED':
+          handleWebMessage(msg);
+          break;
+      }
     } catch {
       // Ignore parse errors
     }
-  }, [messageHandlers]);
+  }, [handleLogout, handleNativeLogin, handleImagePickerRequest, handleWebMessage]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Navigation & Error Handlers (extracted to hooks)
@@ -111,7 +132,6 @@ export default function WebViewScreen() {
 
   const { handleWebViewError, handleHttpError } = useWebViewErrors({
     webViewRef,
-    setUrl,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -140,7 +160,7 @@ export default function WebViewScreen() {
           style={styles.webview}
           userAgent={CHROME_USER_AGENT}
           {...WEBVIEW_BASE_PROPS}
-          onLoadEnd={() => setIsInitialLoad(false)}
+          // onLoadEnd 대신 WEB_READY 메시지로 스플래시 숨김 (흰 화면 방지)
           onMessage={handleMessage}
           onShouldStartLoadWithRequest={handleLoadRequest}
           onNavigationStateChange={handleNavigation}

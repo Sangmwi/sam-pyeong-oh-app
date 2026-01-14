@@ -42,6 +42,11 @@ export const getLoginUrl = (): string => {
   return `${baseUrl}/login`;
 };
 
+export const getAppInitUrl = (): string => {
+  const baseUrl = getInitialUrl();
+  return `${baseUrl}/app-init`;
+};
+
 // ============================================================================
 // Navigation
 // ============================================================================
@@ -63,5 +68,5 @@ export const DOUBLE_TAP_EXIT_DELAY = 2000;
 // ============================================================================
 
 export const CHROME_USER_AGENT =
-  'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36';
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
