@@ -263,7 +263,12 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
       }
 
       console.log(`${LOG_PREFIX} Session established for:`, data.user?.email);
-      // onAuthStateChange가 세션 변경을 감지하여 WebView에 전달합니다
+
+      // onAuthStateChange보다 먼저 직접 WebView에 세션 전달 (race condition 방지)
+      if (data.session) {
+        console.log(`${LOG_PREFIX} Syncing session to WebView immediately...`);
+        await syncSessionToWebView(data.session);
+      }
 
     } catch (error) {
       if (isErrorWithCode(error)) {
@@ -287,7 +292,7 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
     } finally {
       setIsLoggingIn(false);
     }
-  }, []);
+  }, [syncSessionToWebView]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // 초기화 및 세션 구독
