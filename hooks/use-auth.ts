@@ -85,6 +85,9 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
   // 세션 설정 완료 대기 Promise resolver
   const sessionSetResolverRef = useRef<((success: boolean) => void) | null>(null);
 
+  // 세션 동기화 진행 중 플래그 (중복 방지)
+  const sessionSyncingRef = useRef(false);
+
   // ──────────────────────────────────────────────────────────────────────────
   // WebView 세션 설정 함수
   // ──────────────────────────────────────────────────────────────────────────
@@ -132,12 +135,12 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
           sessionSetResolverRef.current(false);
         }
 
-        // 타임아웃 설정
+        // 타임아웃 설정 (10초 - 느린 네트워크 대응)
         const timeoutId = setTimeout(() => {
           sessionSetResolverRef.current = null;
-          console.log(`${LOG_PREFIX} Session set timeout`);
+          console.log(`${LOG_PREFIX} Session set timeout - web may have navigated already`);
           resolve(false);
-        }, 5000);
+        }, 10000);
 
         // resolver 저장
         sessionSetResolverRef.current = (success: boolean) => {
@@ -267,11 +270,19 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
       // onAuthStateChange보다 먼저 직접 WebView에 세션 전달 (race condition 방지)
       if (data.session) {
         console.log(`${LOG_PREFIX} Syncing session to WebView immediately...`);
-        const syncSuccess = await syncSessionToWebView(data.session);
-        // 세션 설정 성공 후 홈으로 이동 명령 전송 (웹 네비게이션 실패 대비)
-        if (syncSuccess) {
-          console.log(`${LOG_PREFIX} Session synced, navigating to home...`);
-          WebViewBridge.navigateHome(webViewRef);
+        sessionSyncingRef.current = true;
+        try {
+          const syncSuccess = await syncSessionToWebView(data.session);
+          // 세션 설정 성공 후 홈으로 이동 명령 전송 (웹 네비게이션 실패 대비)
+          if (syncSuccess) {
+            console.log(`${LOG_PREFIX} Session synced, navigating to home...`);
+            WebViewBridge.navigateHome(webViewRef);
+          } else {
+            // 타임아웃 또는 실패 - 웹에서 이미 네비게이션했을 수 있음
+            console.log(`${LOG_PREFIX} Session sync failed/timed out, relying on web navigation`);
+          }
+        } finally {
+          sessionSyncingRef.current = false;
         }
       }
 
@@ -280,20 +291,20 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
             console.log(`${LOG_PREFIX} User cancelled the sign-in`);
-            break;
+            return;  // 정상 종료 (throw 아님)
           case statusCodes.IN_PROGRESS:
             console.log(`${LOG_PREFIX} Sign-in already in progress`);
-            break;
+            return;  // 정상 종료 (throw 아님)
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             console.error(`${LOG_PREFIX} Play Services not available`);
-            break;
+            break;  // 에러로 처리
           default:
             console.error(`${LOG_PREFIX} Google Sign-In error:`, error.code, error.message);
         }
       } else {
         console.error(`${LOG_PREFIX} Unexpected error:`, error);
       }
-      throw error;
+      throw error;  // 실제 에러만 throw
     } finally {
       setIsLoggingIn(false);
     }
@@ -321,8 +332,8 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
       console.log(`${LOG_PREFIX} Auth state changed:`, event);
       setSession(newSession);
 
-      // 세션 변경 시 WebView에 전달
-      if (webReadyRef.current) {
+      // 세션 변경 시 WebView에 전달 (signInWithGoogle에서 이미 처리 중이면 스킵)
+      if (webReadyRef.current && !sessionSyncingRef.current) {
         syncSessionToWebView(newSession);
       }
     });
