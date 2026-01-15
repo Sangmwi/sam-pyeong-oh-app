@@ -209,10 +209,15 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
           if (sessionSetResolverRef.current) {
             sessionSetResolverRef.current(message.success);
           }
-          // 세션 설정 실패 시 무효 토큰 정리 (다음 재시작 시 다시 실패하지 않도록)
-          if (!message.success) {
-            console.log(`${LOG_PREFIX} Session set failed, clearing local session`);
+          // 네비게이션은 앱에서 처리 (race condition 방지)
+          // 웹에서 네비게이션하면 Preview 환경에서 메시지 손실 발생
+          if (message.success) {
+            console.log(`${LOG_PREFIX} Navigating to home...`);
+            WebViewBridge.navigateHome(webViewRef);
+          } else {
+            console.log(`${LOG_PREFIX} Session set failed, navigating to login...`);
             supabase.auth.signOut();
+            WebViewBridge.navigateTo(webViewRef, '/login');
           }
           break;
 
@@ -277,9 +282,10 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
         console.log(`${LOG_PREFIX} Syncing session to WebView...`);
         sessionSyncingRef.current = true;
         try {
-          // 세션 전달만 담당, 네비게이션은 웹에서 처리
+          // 세션 전달 → SESSION_SET 응답 수신 → 앱에서 네비게이션 처리
+          // (웹에서 네비게이션하면 Preview 환경에서 메시지 손실 발생)
           await syncSessionToWebView(data.session);
-          console.log(`${LOG_PREFIX} Session synced, web will handle navigation`);
+          console.log(`${LOG_PREFIX} Session synced, app will handle navigation on SESSION_SET`);
         } finally {
           sessionSyncingRef.current = false;
         }
