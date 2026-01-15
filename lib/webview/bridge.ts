@@ -77,6 +77,11 @@ export const WebViewBridge = {
     sendCommand(webViewRef, { type: 'LOGIN_ERROR', error });
   },
 
+  /** 로그인 취소 전달 */
+  sendLoginCancelled: (webViewRef: React.RefObject<WebView | null>) => {
+    sendCommand(webViewRef, { type: 'LOGIN_CANCELLED' });
+  },
+
   // ──────────────────────────────────────────────────────────────────────────
   // Image Picker
   // ──────────────────────────────────────────────────────────────────────────

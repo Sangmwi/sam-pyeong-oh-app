@@ -2,7 +2,7 @@ import { useCallback, RefObject } from 'react';
 import { WebView } from 'react-native-webview';
 import CookieManager from '@react-native-cookies/cookies';
 
-import { getInitialUrl } from '@/lib/webview';
+import { getInitialUrl, WebViewBridge } from '@/lib/webview';
 
 // ============================================================================
 // Types
@@ -11,7 +11,7 @@ import { getInitialUrl } from '@/lib/webview';
 type UseAuthHandlersOptions = {
   webViewRef: RefObject<WebView | null>;
   signOut: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
 };
 
 type UseAuthHandlersResult = {
@@ -69,17 +69,18 @@ export function useAuthHandlers({
   const handleNativeLogin = useCallback(async () => {
     console.log('[WebView] Native login requested from web');
     try {
-      await signInWithGoogle();
-      // 로그인 성공 시 onAuthStateChange가 토큰을 WebView에 전달
+      const success = await signInWithGoogle();
+
+      if (!success) {
+        // 취소됨 - 웹에 알림 (로딩 해제)
+        console.log('[WebView] Native login cancelled');
+        WebViewBridge.sendLoginCancelled(webViewRef);
+      }
+      // 성공 시 onAuthStateChange가 토큰을 WebView에 전달
     } catch (error) {
       console.error('[WebView] Native login failed:', error);
       // 에러 시 웹에 알림 (로딩 해제)
-      webViewRef.current?.injectJavaScript(`
-        window.dispatchEvent(new CustomEvent('app-command', {
-          detail: { type: 'LOGIN_ERROR', error: 'Native login failed' }
-        }));
-        true;
-      `);
+      WebViewBridge.sendLoginError(webViewRef, 'Native login failed');
     }
   }, [signInWithGoogle, webViewRef]);
 

@@ -64,8 +64,8 @@ interface UseAuthResult {
   isLoggingIn: boolean;
   /** 로그아웃 함수 */
   signOut: () => Promise<void>;
-  /** 네이티브 Google OAuth 시작 */
-  signInWithGoogle: () => Promise<void>;
+  /** 네이티브 Google OAuth 시작 (성공: true, 취소/중복: false) */
+  signInWithGoogle: () => Promise<boolean>;
   /** 웹에서 오는 메시지 처리 */
   handleWebMessage: (message: WebToAppMessage) => void;
 }
@@ -236,7 +236,7 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
   // Native Google Sign-In (signInWithIdToken 방식)
   // ──────────────────────────────────────────────────────────────────────────
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
       setIsLoggingIn(true);
       console.log(`${LOG_PREFIX} Starting native Google Sign-In...`);
@@ -249,7 +249,7 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
 
       if (!isSuccessResponse(response)) {
         console.log(`${LOG_PREFIX} Google Sign-In was cancelled`);
-        return;
+        return false;
       }
 
       const { idToken } = response.data;
@@ -287,15 +287,17 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
         }
       }
 
+      return true;
+
     } catch (error) {
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
             console.log(`${LOG_PREFIX} User cancelled the sign-in`);
-            return;  // 정상 종료 (throw 아님)
+            return false;
           case statusCodes.IN_PROGRESS:
             console.log(`${LOG_PREFIX} Sign-in already in progress`);
-            return;  // 정상 종료 (throw 아님)
+            return false;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             console.error(`${LOG_PREFIX} Play Services not available`);
             break;  // 에러로 처리
