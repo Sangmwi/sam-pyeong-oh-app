@@ -209,15 +209,11 @@ export function useAuth(webViewRef: React.RefObject<WebView | null>): UseAuthRes
           if (sessionSetResolverRef.current) {
             sessionSetResolverRef.current(message.success);
           }
-          // 네비게이션은 앱에서 처리 (race condition 방지)
-          // 웹에서 네비게이션하면 Preview 환경에서 메시지 손실 발생
-          if (message.success) {
-            console.log(`${LOG_PREFIX} Navigating to home...`);
-            WebViewBridge.navigateHome(webViewRef);
-          } else {
-            console.log(`${LOG_PREFIX} Session set failed, navigating to login...`);
+          // 네비게이션은 웹에서 처리 (window.location.replace)
+          // 앱에서는 세션 실패 시 토큰 정리만
+          if (!message.success) {
+            console.log(`${LOG_PREFIX} Session set failed, clearing local session...`);
             supabase.auth.signOut();
-            WebViewBridge.navigateTo(webViewRef, '/login');
           }
           break;
 
