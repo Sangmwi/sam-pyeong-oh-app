@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 
 import { SplashScreen } from '@/components/splash-screen';
+import { ErrorModal } from '@/components/error-modal';
 import {
   useSmartBackHandler,
   useAuth,
@@ -130,7 +131,7 @@ export default function WebViewScreen() {
     setRouteInfo,
   });
 
-  const { handleWebViewError, handleHttpError } = useWebViewErrors({
+  const { handleWebViewError, handleHttpError, error, clearError } = useWebViewErrors({
     webViewRef,
   });
 
@@ -178,6 +179,17 @@ export default function WebViewScreen() {
 
       {/* Image Picker ActionSheet */}
       {ImagePickerSheet}
+
+      {/* Error Modal */}
+      <ErrorModal
+        visible={!!error}
+        onClose={clearError}
+        onRetry={() => {
+          webViewRef.current?.reload();
+          clearError();
+        }}
+        error={error}
+      />
     </View>
   );
 }
